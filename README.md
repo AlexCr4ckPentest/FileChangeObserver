@@ -9,5 +9,4 @@
 1. `cd FileChangeObserver`
 1. `mkdir build && cd build`
 1. `cmake .. && make`
-1. `sudo make install` (optional)
 1. run `./file-change-observer -h` for show help
