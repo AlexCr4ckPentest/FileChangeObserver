@@ -3,7 +3,7 @@
 ## Dependencies
 1. C++ Compiler (with C++17 support)
 1. CMake (>= 3.1)
-1. Boost library (>= 1.7)
+1. Boost library (>= 1.71.0)
 
 ## Building
 1. `cd FileChangeObserver`
