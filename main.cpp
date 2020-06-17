@@ -34,10 +34,12 @@ int main(int argc, char **argv)
         ("timeout,T", po::value<uint32_t>(&sleep_timeout)->value_name("timeout")->default_value(DEFAULT_SLEEP_TIMEOUT), "sleep timeout")
         ("paths,P", po::value<std::vector<boost_fs::path> >()->value_name("paths")->multitoken(), "paths to directories for monitoring")
     ;
-    po::store(po::parse_command_line(argc, argv, opts_descr), parsed_options);
 
 
-    try { po::notify(parsed_options); }
+    try {
+        po::store(po::parse_command_line(argc, argv, opts_descr), parsed_options);
+        po::notify(parsed_options);
+    }
     catch (const boost::program_options::error &err) {
         std::cerr << "Error: " << err.what() << "\n";
         std::cout << opts_descr;
