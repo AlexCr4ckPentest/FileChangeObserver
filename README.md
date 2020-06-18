@@ -9,8 +9,12 @@
 1. `cd FileChangeObserver`
 1. `mkdir build && cd build`
 1. `cmake .. && make`
-1. run `./file-change-observer -h` for show help
+1. Run `./file-change-observer -h` for show help
 
 ## Using
--.
-.-
+1. Select monitoring directory (directories)
+1. Specify paths through the `-P` option: `./file-change-observer -P <paths>`
+1. Specify sleep timeout through the `-T` option: `./file-change-observer -T <timeout>`
+1. Specify update iteration through the `-U` option: `./file-change-observer -U <update_iteration>`
+### Example
+`./file-change-observer -T 500 -U 10 -P /home/user /usr/bin /usr/etc`
