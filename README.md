@@ -17,5 +17,6 @@
 1. Specify sleep timeout through the `-T` option: `./file-change-observer -T <timeout>`
 1. Specify update iteration through the `-U` option: `./file-change-observer -U <update_iteration>`
 ### Example
-`./file-change-observer -T 500 -U 10 -P /home/user /usr/bin /usr/etc`
-This command start monitoring files in /home/user /usr/bin /usr/etc directories with sleep timeout=500ms, update iteration=20
+`./file-change-observer -T 500 -U 10 -P /home/user /usr/bin`
+
+This command start monitoring files in /home/user /usr/bin directories with sleep timeout=500ms, update iteration=20
