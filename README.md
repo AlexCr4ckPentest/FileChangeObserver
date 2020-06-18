@@ -19,4 +19,4 @@
 ### Example
 `./file-change-observer -T 500 -U 10 -P /home/user /usr/bin`
 
-This command start monitoring files in /home/user /usr/bin directories with sleep timeout=500ms, update iteration=20
+This command start monitoring files in `/home/user` `/usr/bin` directories with `sleep timeout=500ms`, `update iteration=20`
