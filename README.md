@@ -10,3 +10,7 @@
 1. `mkdir build && cd build`
 1. `cmake .. && make`
 1. run `./file-change-observer -h` for show help
+
+## Using
+-.
+.-
