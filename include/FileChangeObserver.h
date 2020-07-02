@@ -9,7 +9,7 @@
 
 namespace boost_fs = boost::filesystem;
 
-namespace my
+namespace alex
 {
 
 constexpr uint32_t __DEFAULT_SLEEP_TIMEOUT      {1500};
@@ -58,6 +58,6 @@ private:
     std::vector<boost_fs::path> m_files_in_dir {};
 };
 
-} // namespace my
+} // namespace alex
 
 #endif // _FILE_CHANGE_OBSERVER_H_
