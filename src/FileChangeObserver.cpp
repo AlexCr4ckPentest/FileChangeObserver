@@ -2,7 +2,7 @@
 
 #include <thread>
 
-namespace my
+namespace alex
 {
 
 FileChangeObserver::FileChangeObserver() noexcept
@@ -99,4 +99,4 @@ void FileChangeObserver::start(void (*file_changed_handler)(std::string_view)) n
     }
 }
 
-} // namespace my
+} // namespace alex
