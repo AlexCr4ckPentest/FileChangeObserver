@@ -16,14 +16,14 @@ enum
     MAX_SLEEP_TIMEOUT = 5500
 };
 
-namespace po = boost::program_options;
-
 int main(int argc, char **argv)
 {
+    namespace po = boost::program_options;
+    
     uint16_t update_iteration {0};
     uint32_t sleep_timeout {0};
 
-    my::FileChangeObserver file_watcher {};
+    alex::FileChangeObserver file_watcher {};
 
     po::variables_map parsed_options {};
     po::options_description opts_descr {"Available options"};
