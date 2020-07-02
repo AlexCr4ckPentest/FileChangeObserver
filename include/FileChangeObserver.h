@@ -12,8 +12,8 @@ namespace boost_fs = boost::filesystem;
 namespace my
 {
 
-constexpr uint32_t __DEFAULT_SLEEP_TIMEOUT      = 1500;
-constexpr uint16_t __DEFAULT_UPDATE_ITERATION   = 35;
+constexpr uint32_t __DEFAULT_SLEEP_TIMEOUT      {1500};
+constexpr uint16_t __DEFAULT_UPDATE_ITERATION   {35};
 
 class FileChangeObserver
 {
