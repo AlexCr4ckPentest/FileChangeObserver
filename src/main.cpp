@@ -2,7 +2,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "include/FileChangeObserver.h"
+#include "../include/FileChangeObserver.h"
 
 enum
 {
