@@ -7,8 +7,8 @@
 
 ## Building
 ```Bash
-$ cd FileChangeObserver`
-$ mkdir build && cd build`
+$ cd FileChangeObserver
+$ mkdir build && cd build
 $ cmake .. && make
 ```
 1. Run `./file-change-observer -h` for show help
