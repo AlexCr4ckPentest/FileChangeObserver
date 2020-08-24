@@ -11,7 +11,7 @@ $ cd FileChangeObserver
 $ mkdir build && cd build
 $ cmake .. && make
 ```
-1. Run `./file-change-observer -h` for show help
+Run `./file-change-observer -h` for show help
 
 ## Using
 Soon
