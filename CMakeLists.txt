@@ -1,19 +1,24 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(file-change-observer)
+project(file-change-observer LANGUAGES CXX)
 
-find_package(Boost REQUIRED)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Os -Wall -Wextra")
 
-find_library(BOOST_SYS boost_system)
-find_library(BOOST_FILESYSTEM boost_filesystem)
-find_library(BOOST_PROGRAM_OPTIONS boost_program_options)
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
 
-file(GLOB SRC_PATH src/*.cpp)
-set (SOURCES ${SRC_PATH})
+find_package(Boost REQUIRED COMPONENTS filesystem program_options)
 
-set (CMAKE_CXX_STANDART 17)
-set (CMAKE_CXX_STANDARD_REQUIRED on)
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++17")
-
-add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} ${BOOST_SYS} ${BOOST_FILESYSTEM} ${BOOST_PROGRAM_OPTIONS})
+if(Boost_FOUND)
+    file(GLOB SRC_PATH src/*.cpp)
+    file(GLOB INC_PATH include/*.h)
+    add_executable(${PROJECT_NAME} ${SRC_PATH} ${INC_PATH})
+    if(WIN32)
+        target_link_libraries(${PROJECT_NAME} Boost::filesystem Boost::program_options ws2_32)
+    elseif(UNIX)
+        target_link_libraries(${PROJECT_NAME} Boost::filesystem Boost::program_options)
+    endif()
+endif()

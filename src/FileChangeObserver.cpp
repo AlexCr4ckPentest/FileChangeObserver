@@ -1,20 +1,33 @@
 #include "../include/FileChangeObserver.h"
 
-#include <thread>
+#include <iostream>
 
 namespace alex
 {
 
+uint32_t FileChangeObserver::m_timer_interval_msec {};
+uint32_t FileChangeObserver::m_update_frequency {};
+
+FileChangeObserver::PathList FileChangeObserver::m_working_dirs {};
+FileChangeObserver::PathList FileChangeObserver::m_files_list {};
+FileChangeObserver::DateList FileChangeObserver::m_date_list {};
+
+static uint8_t tick_count {};
+
+
+
 FileChangeObserver::FileChangeObserver() noexcept
 {}
 
-FileChangeObserver::FileChangeObserver(const std::vector<boost_fs::path> &paths,
-                                       const uint32_t sleep_timeout,
-                                       const uint16_t update_iteration)
-    : m_update_iteration {update_iteration}
-    , m_sleep_timeout {sleep_timeout}
+
+
+FileChangeObserver::FileChangeObserver(const FileChangeObserver::PathList& path_list,
+                                       const uint32_t timer_interval_msec,
+                                       const uint32_t update_frequency) noexcept
 {
-    add_paths(paths);
+    add_paths(path_list);
+    m_timer_interval_msec = timer_interval_msec;
+    m_update_frequency = update_frequency;
 }
 
 
@@ -24,35 +37,47 @@ FileChangeObserver::~FileChangeObserver() noexcept
 
 
 
-void FileChangeObserver::add_path(const boost_fs::path &path)
+void FileChangeObserver::add_path(const boost::filesystem::path& path) noexcept
 {
-    if (!boost_fs::exists(path)) {
-        throw std::runtime_error(std::string{"No such directory: "} + path.string());
+    if (!boost::filesystem::exists(path)) {
+        std::cerr << "Error: no such directory: " + path.string() << "\n";
+        std::terminate();
     }
-    m_paths_to_dirs.emplace_back(path);
+    m_working_dirs.emplace_back(path);
 }
 
 
 
-void FileChangeObserver::add_paths(const std::vector<boost_fs::path> &paths)
+void FileChangeObserver::add_paths(const std::vector<boost::filesystem::path>& path_list) noexcept
 {
-    if (paths.size() == 0) {
-        throw std::runtime_error("No directories for watch!");
+    if (path_list.empty()) {
+        std::cerr << "Error: paths_list is empty!!\n";
+        std::terminate();
     }
-    for (auto path : paths) {
+    for (auto path : path_list) {
         add_path(std::move(path));
     }
 }
 
 
 
-void FileChangeObserver::load_file_modified_dates() noexcept
+void FileChangeObserver::start_observing(const std::function<void(const boost::filesystem::path&)>& notifier) noexcept
 {
-    for (auto dir_path : m_paths_to_dirs) {
-        for (boost_fs::directory_iterator it {dir_path}; it != boost_fs::directory_iterator {}; ++it) {
-            if (it->status().type() != boost_fs::file_type::directory_file) {
-                m_files_in_dir.emplace_back(it->path());
-                m_last_modified_dates.emplace_back(boost_fs::last_write_time(it->path()));
+    if (!m_files_list.empty()) {
+        PathList::const_iterator file_iter {};
+        DateList::iterator date_iter {};
+        std::time_t last_modified_date {};
+        boost::system::error_code error {};
+
+        for (file_iter = m_files_list.cbegin(), date_iter = m_date_list.begin();
+             file_iter != m_files_list.cend() && date_iter != m_date_list.end();
+             ++file_iter, ++date_iter)
+        {
+            last_modified_date = boost::filesystem::last_write_time(*file_iter, error);
+            if (error) { continue; }
+            if (*date_iter != last_modified_date) {
+                *date_iter = last_modified_date;
+                notifier(*file_iter);
             }
         }
     }
@@ -60,43 +85,50 @@ void FileChangeObserver::load_file_modified_dates() noexcept
 
 
 
-void FileChangeObserver::start(void (*file_changed_handler)(std::string_view)) noexcept
+void FileChangeObserver::load_files_and_dates() noexcept
 {
-    uint16_t iter_counter {0};
-    std::time_t last_modified_time {};
-
-    boost::system::error_code err_code {};
-    std::vector<std::time_t>::iterator file_date_iter {};
-    std::vector<boost_fs::path>::const_iterator file_path_iter {};
-
-    load_file_modified_dates();
-
-    while (true) {
-        if (iter_counter == m_update_iteration) {
-            update_dates_list();
-            iter_counter = 0;
-        }
-
-        file_date_iter = m_last_modified_dates.begin();
-        file_path_iter = m_files_in_dir.cbegin();
-
-        for (; file_path_iter != m_files_in_dir.cend() && file_date_iter != m_last_modified_dates.end();
-            ++file_path_iter, ++file_date_iter)
-        {
-            last_modified_time = boost_fs::last_write_time(*file_path_iter, err_code);
-            if (err_code) {
-                continue;
-            }
-            if (*file_date_iter != last_modified_time) {
-                *file_date_iter = last_modified_time;
-                file_changed_handler(file_path_iter->string());
+    for (auto path : m_working_dirs) {
+        boost::filesystem::directory_iterator dir_iter {path};
+        for (; dir_iter != boost::filesystem::directory_iterator{}; ++dir_iter) {
+            if (dir_iter->status().type() != boost::filesystem::file_type::directory_file) {
+                m_files_list.emplace_back(dir_iter->path());
+                m_date_list.emplace_back(boost::filesystem::last_write_time(dir_iter->path()));
             }
         }
-
-        iter_counter++;
-
-        std::this_thread::sleep_for(std::chrono::microseconds(m_sleep_timeout));
     }
+}
+
+
+
+void FileChangeObserver::on_timer_update([[maybe_unused]] const boost::system::error_code& error,
+                                        boost::asio::deadline_timer* timer,
+                                        const std::function<void()>& run_observer) noexcept
+{
+    if (tick_count == m_update_frequency) {
+        update_files_and_dates();
+        tick_count = 0;
+    }
+
+    tick_count++;
+
+    run_observer();
+    timer->expires_from_now(boost::posix_time::milliseconds(m_timer_interval_msec));
+    timer->async_wait(boost::bind(on_timer_update, boost::asio::placeholders::error, timer, run_observer));
+}
+
+
+
+void FileChangeObserver::start(const std::function<void(const boost::filesystem::path&)>& notifier) noexcept
+{
+    load_files_and_dates();
+
+    boost::asio::io_context io_context {};
+    boost::asio::deadline_timer timer {io_context};
+
+    timer.expires_from_now(boost::posix_time::milliseconds(m_timer_interval_msec));
+    timer.async_wait(boost::bind(on_timer_update, boost::asio::placeholders::error, &timer, std::bind(start_observing, notifier)));
+
+    io_context.run();
 }
 
 } // namespace alex

@@ -1,61 +1,65 @@
-#include <vector>
-#include <string_view>
-#include <stdexcept>
+﻿#include <vector>
+#include <future>
 
 #include <boost/filesystem.hpp>
+#include <boost/asio.hpp>
+#include <boost/bind/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #ifndef _FILE_CHANGE_OBSERVER_H_
 #define _FILE_CHANGE_OBSERVER_H_
 
-namespace boost_fs = boost::filesystem;
-
 namespace alex
 {
 
-constexpr uint32_t __DEFAULT_SLEEP_TIMEOUT      {1500};
-constexpr uint16_t __DEFAULT_UPDATE_ITERATION   {35};
-
 class FileChangeObserver
 {
+    using PathList = std::vector<boost::filesystem::path>;
+    using DateList = std::vector<std::time_t>;
+
 public:
     FileChangeObserver() noexcept;
-    FileChangeObserver(const std::vector<boost_fs::path> &paths,
-                       const uint32_t sleep_timeout = __DEFAULT_SLEEP_TIMEOUT,
-                       const uint16_t update_iteration = __DEFAULT_UPDATE_ITERATION);
+    FileChangeObserver(const PathList& path_list, const uint32_t timer_interval_msec, const uint32_t update_frequency) noexcept;
     ~FileChangeObserver() noexcept;
 
     FileChangeObserver(const FileChangeObserver&) = delete;
     FileChangeObserver& operator=(const FileChangeObserver&) = delete;
 
-    void add_path(const boost_fs::path &path);
-    void add_paths(const std::vector<boost_fs::path> &paths);
+    void add_path(const boost::filesystem::path& path) noexcept;
+    void add_paths(const PathList& path_list) noexcept;
 
-    inline void set_sleep_timeout(const uint32_t sleep_timeout) noexcept
-    { m_sleep_timeout = sleep_timeout; }
+    inline void set_timer_interval(const uint32_t timer_interval_msec) noexcept
+    { m_timer_interval_msec = timer_interval_msec; }
 
-    inline void set_update_iteration(const uint16_t update_iteration) noexcept
-    { m_update_iteration = update_iteration; }
+    inline void set_update_frequency(const uint32_t update_frequency)
+    { m_update_frequency = update_frequency; }
 
-    void start(void (*file_changed_handler)(std::string_view)) noexcept;
+    void start(const std::function<void(const boost::filesystem::path&)>& notifier) noexcept;
+
+    inline auto async_start(const std::function<void(const boost::filesystem::path&)>& notifier) noexcept
+    { return std::async(std::launch::async, std::bind(&FileChangeObserver::start, this, notifier)); }
 
 private:
-    void load_file_modified_dates() noexcept;
+    static PathList m_working_dirs;
+    static PathList m_files_list;
+    static DateList m_date_list;
 
-    inline void update_dates_list() noexcept
+    static uint32_t m_timer_interval_msec;
+    static uint32_t m_update_frequency;
+
+    static void load_files_and_dates() noexcept;
+
+    static inline void update_files_and_dates() noexcept
     {
-        m_last_modified_dates.clear();
-        m_files_in_dir.clear();
-        load_file_modified_dates();
+        m_files_list.clear();
+        m_date_list.clear();
+        load_files_and_dates();
     }
 
-private:
-    uint16_t m_update_iteration {};
-    uint32_t m_sleep_timeout {};
+    static void on_timer_update(const boost::system::error_code& error, boost::asio::deadline_timer* timer,
+                                const std::function<void()>& run_observer) noexcept;
 
-    std::vector<boost_fs::path> m_paths_to_dirs {};
-
-    std::vector<std::time_t> m_last_modified_dates {};
-    std::vector<boost_fs::path> m_files_in_dir {};
+    static void start_observing(const std::function<void(const boost::filesystem::path&)>& notifier) noexcept;
 };
 
 } // namespace alex
