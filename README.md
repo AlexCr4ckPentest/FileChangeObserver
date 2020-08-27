@@ -1,4 +1,5 @@
 # FileChangeObserver
+Simple program to detect file changes in selected folders
 
 ## Dependencies
 1. C++ Compiler (with C++17 support)
